@@ -155,7 +155,6 @@ class ModerationCog(commands.Cog):
     @commands.check(has_moderator)
     @commands.check(not_blocked)
     async def mute(self, ctx, member: discord.Member, length, *, reason):
-        await ctx.send("mute!")
         try:
             role_id = await get_id(ctx.guild, "Mute")
             role = get(member.guild.roles, id=role_id)

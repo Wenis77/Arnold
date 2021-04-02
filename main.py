@@ -40,7 +40,7 @@ if __name__ == '__main__':
     path = os.path.abspath("./cogs/")
     for file in os.listdir(path):
         if file.endswith(".py") and file not in ignore_list:
-            bot.load_extension(f'cogs.{file[:-3]}')
+            bot.load_extension(f"cogs.{file[:-3]}")
             print("Loaded: {}".format(file))
 
 

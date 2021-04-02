@@ -1,4 +1,4 @@
-from discord.ext import commands
+from discord.ext import commands, tasks
 import discord
 import datetime
 import time
@@ -16,6 +16,7 @@ print("PATH: ", db_path)
 class Events(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.reminder_check.start()
 
     async def is_server(self, ctx):
         return ctx.guild.id == 774751718754877480
@@ -36,6 +37,33 @@ class Events(commands.Cog):
         channel = self.bot.get_channel(789724879809019904)
         await channel.send(embed=embed)
 
+    @tasks.loop(seconds=5.0)
+    async def reminder_check(self):
+        conn = sqlite3.connect(db_path)
+        c = conn.cursor()
+        myGen = self.bot.get_channel(503741758564335621)
+
+        c.execute("SELECT * FROM reminders WHERE time < ?", (int(time.time()),))
+        rows = c.fetchall()
+
+        for row in rows:
+            try:
+                id = row[0]
+                user_id = row[1]
+                reminder = row[3]
+                channel_id = row[4]
+
+                channel = self.bot.get_channel(channel_id)
+                user = self.bot.get_user(user_id)
+
+                c.execute("DELETE FROM reminders WHERE id=?", (id,))
+                conn.commit()
+
+                await channel.send(f"{user.mention} {reminder}")
+            except Exception as e:
+                await myGen.send(e)
+                continue
+
     @commands.Cog.listener()
     async def on_ready(self):
         print('Ready!')
@@ -44,35 +72,6 @@ class Events(commands.Cog):
 
         game = discord.Game("with the ban command!")
         await self.bot.change_presence(status=discord.Status.online, activity=game)
-
-        while True:
-            conn = sqlite3.connect(db_path)
-            c = conn.cursor()
-            myGen = self.bot.get_channel(503741758564335621)
-
-            c.execute("SELECT * FROM reminders WHERE time < ?", (int(time.time()),))
-            rows = c.fetchall()
-
-            for row in rows:
-                try:
-                    id = row[0]
-                    user_id = row[1]
-                    reminder = row[3]
-                    channel_id = row[4]
-
-                    channel = self.bot.get_channel(channel_id)
-                    user = self.bot.get_user(user_id)
-
-                    c.execute("DELETE FROM reminders WHERE id=?", (id,))
-                    conn.commit()
-
-                    await channel.send(f"{user.mention} {reminder}")
-                except Exception as e:
-                    await myGen.send(e)
-                    continue
-
-
-            await asyncio.sleep(1)
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
